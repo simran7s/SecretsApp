@@ -3,6 +3,7 @@ const express = require('express');
 const ejs = require('ejs');
 const port = 3000;
 const mongoose = require("mongoose")
+var encrypt = require('mongoose-encryption');
 require('dotenv').config()
 
 const app = express();
@@ -14,11 +15,17 @@ app.use(express.urlencoded({ extended: true }));
 // Creating Connection to DB
 mongoose.connect("mongodb://localhost:27017/userDB")
 
-// Creating User schema
-const userSchema = mongoose.Schema({
+// Creating User schema (MUST use "new" if using encryption)
+const userSchema = new mongoose.Schema({
     email: String,
     password: String
 })
+
+// SECRET used for encryption
+const secret = process.env.SECRET
+
+// Adding a encrypt plugin to the userSchema (ONLY password is encrypted)
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
 
 // User Model (Users Collection)
 const User = new mongoose.model("User", userSchema)
