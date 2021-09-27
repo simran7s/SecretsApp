@@ -5,7 +5,8 @@ const port = 3000;
 const mongoose = require("mongoose")
 const encrypt = require('mongoose-encryption');
 // Hashing
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 require('dotenv').config()
 
 const app = express();
@@ -43,20 +44,25 @@ app.route("/login")
         res.render("login")
     })
     .post((req, res) => {
+        const username = req.body.username
+        const password = req.body.password
         // Find if there is a user with that username
-        User.findOne({ email: req.body.username }, (err, foundUser) => {
+        User.findOne({ email: username }, (err, foundUser) => {
             if (err) {
                 console.log(err)
             } else {
                 if (!foundUser) {
                     res.send("User not found")
                 } else {
-                    // Compared stored hash with the hashed version of entered password
-                    if (foundUser.password === md5(req.body.password)) {
-                        res.render("secrets")
-                    } else {
-                        res.send("Password Incorrect")
-                    }
+                    // Compared stored hash+salt with the hashed+salted version of entered password
+                    bcrypt.compare(password, foundUser.password, function (err, result) {
+                        if (result) {
+                            res.render("secrets")
+                        } else {
+                            res.send("Password Incorrect")
+                        }
+                    });
+
                 }
             }
         })
@@ -68,19 +74,28 @@ app.route("/register")
         res.render("register")
     })
     .post((req, res) => {
-        const newUser = new User({
-            email: req.body.username,
-            // hashing the password before storing
-            password: md5(req.body.password)
-        })
-        newUser.save((err) => {
+        bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
             if (err) {
                 console.log(err)
             } else {
-                // if successful registration, then go to secrets page (we dont want a secrets endpoint)
-                res.render("secrets")
+                // Store hash in your password DB.
+                const newUser = new User({
+                    email: req.body.username,
+                    // hashing the password before storing
+                    password: hash
+                })
+                newUser.save((err) => {
+                    if (err) {
+                        console.log(err)
+                    } else {
+                        // if successful registration, then go to secrets page (we dont want a secrets endpoint)
+                        res.render("secrets")
+                    }
+                })
             }
-        })
+
+        });
+
     })
 
 
