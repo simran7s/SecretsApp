@@ -3,7 +3,9 @@ const express = require('express');
 const ejs = require('ejs');
 const port = 3000;
 const mongoose = require("mongoose")
-var encrypt = require('mongoose-encryption');
+const encrypt = require('mongoose-encryption');
+// Hashing
+const md5 = require('md5');
 require('dotenv').config()
 
 const app = express();
@@ -49,7 +51,8 @@ app.route("/login")
                 if (!foundUser) {
                     res.send("User not found")
                 } else {
-                    if (foundUser.password === req.body.password) {
+                    // Compared stored hash with the hashed version of entered password
+                    if (foundUser.password === md5(req.body.password)) {
                         res.render("secrets")
                     } else {
                         res.send("Password Incorrect")
@@ -67,7 +70,8 @@ app.route("/register")
     .post((req, res) => {
         const newUser = new User({
             email: req.body.username,
-            password: req.body.password
+            // hashing the password before storing
+            password: md5(req.body.password)
         })
         newUser.save((err) => {
             if (err) {
