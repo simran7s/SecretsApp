@@ -107,6 +107,7 @@ app.get("/secrets", (req, res) => {
 
 })
 
+
 /****************      /login     *********************** */
 app.route("/login")
     .get((req, res) => {
@@ -205,7 +206,7 @@ app.route("/submit")
     })
 
 /****************      PORT    *********************** */
-const port = process.env.PORT;
+let port = process.env.PORT;
 if (port == null || port == "") {
     port = 3000;
 }
