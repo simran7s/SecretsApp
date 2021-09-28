@@ -31,13 +31,14 @@ app.use(passport.session())
 // MUST be placed b/w app.uses and mongoose.connect
 
 // Creating Connection to DB
-mongoose.connect("mongodb://localhost:27017/userDB")
+mongoose.connect(process.env.MONGO_URL)
 
 // Creating User schema (MUST use "new" if using encryption)
 const userSchema = new mongoose.Schema({
     email: String,
     password: String,
-    googleId: String
+    googleId: String,
+    secret: String
 })
 // NO LONGER NEED THESE
 // // SECRET used for encryption
@@ -96,14 +97,14 @@ app.get("/", (req, res) => {
 
 /****************      /secrets    *********************** */
 app.get("/secrets", (req, res) => {
-    // Check if user is authenticated (allowed to be here)
-    if (req.isAuthenticated()) {
-        // show them the secrets
-        res.render("secrets")
-    } else {
-        // tell them to login before they can view
-        res.redirect("/login")
-    }
+    // Look through all users and find users with a secret
+    User.find({ "secret": { $ne: null } }, (err, foundUsers) => {
+        if (err) {
+            console.log(err)
+        } else {
+            res.render("secrets", { usersWithSecrets: foundUsers })
+        }
+    })
 
 })
 
@@ -174,6 +175,34 @@ app.route("/register")
             }
         })
 
+    })
+/****************      /submit    *********************** */
+app.route("/submit")
+    .get((req, res) => {
+        // Check if user is authenticated (allowed to be here)
+        if (req.isAuthenticated()) {
+            // show them the secrets
+            res.render("submit")
+        } else {
+            // tell them to login before they can view
+            res.redirect("/login")
+        }
+    })
+    .post((req, res) => {
+        const secret = req.body.secret;
+
+        User.findById(req.user.id, (err, foundUser) => {
+            if (err) {
+                console.log(err)
+            } else {
+                if (foundUser) {
+                    foundUser.secret = secret
+                    foundUser.save(() => {
+                        res.redirect("/secrets")
+                    })
+                }
+            }
+        })
     })
 
 
