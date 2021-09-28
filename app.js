@@ -2,7 +2,6 @@
 require('dotenv').config()
 const express = require('express');
 const ejs = require('ejs');
-const port = 3000;
 const mongoose = require("mongoose")
 const session = require("express-session")
 const passport = require("passport")
@@ -205,7 +204,10 @@ app.route("/submit")
         })
     })
 
-
-app.listen(port, () => {
-    console.log(`Server started on port ${port}`);
-});
+/****************      PORT    *********************** */
+const port = process.env.PORT;
+if (port == null || port == "") {
+    port = 3000;
+}
+app.listen(port);
+console.log(`Server started on port ${port}`);
